@@ -1,9 +1,10 @@
-package com.evoapartments.accommodationbe.resource.accommodation;
+package com.evoapartments.accommodationbe.controller.accommodation;
 
 import com.evoapartments.accommodationbe.exception.PhotoRetrievalException;
 import com.evoapartments.accommodationbe.exception.ResourceNotFoundException;
 import com.evoapartments.accommodationbe.domain.accommodation.Accommodation;
 import com.evoapartments.accommodationbe.domain.reservation.ReservedAccommodation;
+import com.evoapartments.accommodationbe.response.HttpResponse;
 import com.evoapartments.accommodationbe.response.ReservedAccommodationResponse;
 import com.evoapartments.accommodationbe.response.AccommodationResponse;
 import com.evoapartments.accommodationbe.service.reservation.IReservedAccommodationService;
@@ -20,11 +21,14 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.sql.rowset.serial.SerialBlob;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.net.URI;
 import java.sql.Blob;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @RestController
@@ -35,81 +39,114 @@ public class AccommodationController {
     private final IReservedAccommodationService accommodationReservedService;
 
     @GetMapping("/all-accommodations")
-    public ResponseEntity<List<AccommodationResponse>> getAllAccommodations() throws SQLException {
+    public ResponseEntity<HttpResponse> getAllAccommodations() throws SQLException {
         List<Accommodation> accommodations = accommodationService.getAllAccommodations();
         List<AccommodationResponse> accommodationResponses = setPhotosIntoAccommodationResponses(accommodations);
-        return ResponseEntity.ok(accommodationResponses);
+        return accommodationResponses.isEmpty()
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.created(URI.create("")).body(
+                        HttpResponse.builder()
+                                .timeStamp(LocalDateTime.now().toString())
+                                .data(Map.of("accommodations", accommodationResponses, "size", accommodations.size()))
+                                .message("Accommodations list fetched successfully.")
+                                .status(HttpStatus.FOUND)
+                                .statusCode(HttpStatus.FOUND.value())
+                                .build());
     }
 
     @GetMapping("/accommodation/{accommodationId}")
-    public ResponseEntity<Optional<AccommodationResponse>> getAccommodationById(@PathVariable Long accommodationId) {
-        Optional<Accommodation> theAccommodation = accommodationService.getAccommodationById(accommodationId);
-        return theAccommodation.map(accommodation -> {
-            AccommodationResponse accommodationResponse = null;
+    public ResponseEntity<?> getAccommodationById(@PathVariable Long accommodationId) {
+        Optional<Accommodation> accommodation = accommodationService.getAccommodationById(accommodationId);
+        return accommodation.map(a -> {
+            AccommodationResponse accommodationResponse;
             try {
-                accommodationResponse = setMainPhotoIntoAccommodationResponse(accommodation);
+                accommodationResponse = setMainPhotoIntoAccommodationResponse(a);
             } catch (SQLException e) {
-                throw new PhotoRetrievalException(e.getMessage());
+                throw new RuntimeException(e);
             }
-            return ResponseEntity.ok(Optional.of(accommodationResponse));
+            return ResponseEntity.created(URI.create("")).body(
+                    HttpResponse.builder()
+                            .timeStamp(LocalDateTime.now().toString())
+                            .data(Map.of("accommodation", accommodationResponse))
+                            .message("Accommodation found successfully.")
+                            .status(HttpStatus.FOUND)
+                            .statusCode(HttpStatus.FOUND.value())
+                            .build());
         }).orElseThrow(() -> new ResourceNotFoundException("Accommodation not found."));
     }
 
     @GetMapping("/names")
-    public List<String> getAccommodationNames(){
-        return accommodationService.getAllAccommodationNames();
+    public ResponseEntity<HttpResponse> getAccommodationNames(){
+        List<String> accommodationNames = accommodationService.getAllAccommodationNames();
+        return accommodationNames.isEmpty()
+                ? ResponseEntity.noContent().build()
+                :  ResponseEntity.created(URI.create("")).body(
+                        HttpResponse.builder()
+                                .timeStamp(LocalDateTime.now().toString())
+                                .data(Map.of("accommodationNames", accommodationNames, "size", accommodationNames.size()))
+                                .message("Accommodation names list fetched successfully.")
+                                .status(HttpStatus.FOUND)
+                                .statusCode(HttpStatus.FOUND.value())
+                                .build());
     }
 
     @GetMapping("/available-accommodations")
-    public ResponseEntity<List<AccommodationResponse>> getAvailableAccommodations(
+    public ResponseEntity<?> getAvailableAccommodations(
             @RequestParam("checkInDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkIn,
             @RequestParam("checkOutDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOut,
-            @RequestParam("accommodationType") Long typeId
-    ) throws SQLException {
+            @RequestParam("accommodationType") Long typeId) throws SQLException {
         List<Accommodation> availableAccommodations = accommodationService.getAvailableAccommodations(checkIn, checkOut, typeId);
         List<AccommodationResponse> accommodationResponses = setPhotosIntoAccommodationResponses(availableAccommodations);
-        if(accommodationResponses.isEmpty()){
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.ok(accommodationResponses);
-        }
+        return accommodationResponses.isEmpty()
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.created(URI.create("")).body(
+                HttpResponse.builder()
+                        .timeStamp(LocalDateTime.now().toString())
+                        .data(Map.of("accommodations", accommodationResponses, "size", availableAccommodations.size()))
+                        .message("Available accommodations list fetched successfully.")
+                        .status(HttpStatus.FOUND)
+                        .statusCode(HttpStatus.FOUND.value())
+                        .build());
     }
 
     @PostMapping("/add/new-accommodation")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<AccommodationResponse> addNewAccommodation(
+    public ResponseEntity<HttpResponse> addNewAccommodation(
             @RequestParam("accommodationTypeId")Long accommodationTypeId,
             @RequestParam("accommodationPrice")BigDecimal accommodationPrice,
             @RequestParam("photo")MultipartFile photo,
             @RequestParam("accommodationName")String accommodationName,
-//            @RequestParam("description")String description,
             @RequestParam("guestCapacity")Integer guestCapacity,
             @RequestParam("address")String address,
             @RequestParam("city")String city,
             @RequestParam("zipCode")Integer zipCode,
             @RequestParam("country")String country
             ) throws SQLException, IOException {
-        Accommodation savedAccommodation = accommodationService.addNewAccommodation(accommodationTypeId, accommodationPrice,
-               photo, accommodationName, guestCapacity, address, city, zipCode, country );
+        Accommodation savedAccommodation = accommodationService.addNewAccommodation(accommodationTypeId,
+                accommodationPrice, photo, accommodationName, guestCapacity, address, city, zipCode, country );
         AccommodationResponse response = new AccommodationResponse(
                 savedAccommodation.getId(),
                 savedAccommodation.getAccommodationPrice(),
                 savedAccommodation.getAccommodationName(),
                 savedAccommodation.getGuestCapacity(),
-//                        savedAccommodation.getDescription(),
-//                        savedAccommodation.getGuestCapacity(),
                 savedAccommodation.getAddress(),
                 savedAccommodation.getCity(),
                 savedAccommodation.getZipCode(),
                 savedAccommodation.getCountry(),
                 savedAccommodation.getType());
-        //timestamp
-        return ResponseEntity.ok(response);
+        return ResponseEntity.created(URI.create("")).body(
+                HttpResponse.builder()
+                        .timeStamp(LocalDateTime.now().toString())
+                        .data(Map.of("newAccommodation", response))
+                        .message("New accommodation was created successfully.")
+                        .status(HttpStatus.CREATED)
+                        .statusCode(HttpStatus.CREATED.value())
+                        .build());
     }
 
-    @PutMapping("/update/{accommodationId}")
+    @PutMapping("/update/accommodation/{accommodationId}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<AccommodationResponse> updateAccommodation(@PathVariable Long accommodationId,
+    public ResponseEntity<HttpResponse> updateAccommodation(@PathVariable Long accommodationId,
                                                                      @RequestParam(required = false) Long accommodationTypeId,
                                                                      @RequestParam(required = false) BigDecimal accommodationPrice,
                                                                      @RequestParam(required = false) MultipartFile photo,
@@ -129,14 +166,27 @@ public class AccommodationController {
                 accommodationPrice, photoBytes, accommodationName, guestCapacity, address, city, zipCode, country);
         theAccommodation.setPhoto(photoBlob);
         AccommodationResponse accommodationResponse = getAccommodationResponse(theAccommodation);
-        return ResponseEntity.ok(accommodationResponse);
+        return ResponseEntity.created(URI.create("")).body(
+                HttpResponse.builder()
+                        .timeStamp(LocalDateTime.now().toString())
+                        .data(Map.of("updatedAccommodation", accommodationResponse))
+                        .message("New accommodation was updated successfully.")
+                        .status(HttpStatus.OK)
+                        .statusCode(HttpStatus.OK.value())
+                        .build());
     }
 
     @DeleteMapping("/delete/accommodation/{accommodationId}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<Void> deleteAccommodation(@PathVariable Long accommodationId){
+    public ResponseEntity<HttpResponse> deleteAccommodation(@PathVariable Long accommodationId){
         accommodationService.deleteAccommodation(accommodationId);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        return ResponseEntity.created(URI.create("")).body(
+                HttpResponse.builder()
+                        .timeStamp(LocalDateTime.now().toString())
+                        .message("The accommodation was deleted successfully.")
+                        .status(HttpStatus.NO_CONTENT)
+                        .statusCode(HttpStatus.NO_CONTENT.value())
+                        .build());
     }
 
     private AccommodationResponse getAccommodationResponse(Accommodation accommodation) {
@@ -151,22 +201,22 @@ public class AccommodationController {
                 .toList();
         byte[] photoBytes = null;
         Blob photoBlob = accommodation.getPhoto();
-        if(photoBlob != null){
+        if (photoBlob != null){
             try {
                 photoBytes = photoBlob.getBytes(1,(int)photoBlob.length());
             }catch (SQLException ex){
-                throw new PhotoRetrievalException("Error retrieving main photo");
+                throw new PhotoRetrievalException("Error retrieving photo");
             }
         }
-        return new AccommodationResponse(accommodation.getId(), accommodation.getAccommodationPrice(), accommodation.isReserved(),
-                photoBytes, accommodation.getAccommodationName(), accommodation.getGuestCapacity(), accommodation.getAddress(),
-                accommodation.getCity(), accommodation.getZipCode(), accommodation.getCountry(), accommodation.getType(), reservationsInfo);
+        return new AccommodationResponse(accommodation.getId(), accommodation.getAccommodationPrice(),
+                accommodation.isReserved(), photoBytes, accommodation.getAccommodationName(),
+                accommodation.getGuestCapacity(), accommodation.getAddress(), accommodation.getCity(),
+                accommodation.getZipCode(), accommodation.getCountry(), accommodation.getType(), reservationsInfo);
     }
-
 
     private List<AccommodationResponse> setPhotosIntoAccommodationResponses(List<Accommodation> accommodations) throws SQLException {
         List<AccommodationResponse> accommodationResponses = new ArrayList<>();
-        for (Accommodation accommodation : accommodations ){
+        for (Accommodation accommodation : accommodations) {
             AccommodationResponse accommodationResponse = setMainPhotoIntoAccommodationResponse(accommodation);
             accommodationResponses.add(accommodationResponse);
         }
@@ -177,7 +227,7 @@ public class AccommodationController {
         AccommodationResponse accommodationResponse = getAccommodationResponse(accommodation);
         byte[] photoBytes = accommodationService.getAccommodationMainPhotoByAccommodationId(accommodation.getId());
         if (photoBytes != null && photoBytes.length > 0) {
-            String base64Photo = Base64.encodeBase64String(photoBytes);;
+            String base64Photo = Base64.encodeBase64String(photoBytes);
             accommodationResponse.setPhoto(base64Photo);
         }
         return accommodationResponse;
@@ -185,13 +235,5 @@ public class AccommodationController {
 
     private List<ReservedAccommodation> getAllAccommodationReservationsByAccommodationId(Long accommodationId) {
         return accommodationReservedService.getAllAccommodationReservationsByAccommodationId(accommodationId);
-    }
-
-    private List<ReservedAccommodation> getAllReservationsByAccommodationOwnerId(Long accommodationOwnerId) {
-        return null;
-    }
-
-    private List<ReservedAccommodation> getAllReservationsByHostId(Long hostId) {
-        return null;
     }
 }

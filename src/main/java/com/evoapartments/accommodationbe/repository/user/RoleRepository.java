@@ -1,14 +1,12 @@
-package com.evoapartments.accommodationbe.repository;
+package com.evoapartments.accommodationbe.repository.user;
 
 
-import com.evoapartments.accommodationbe.model.Role;
+import com.evoapartments.accommodationbe.domain.user.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
 
 public interface RoleRepository extends JpaRepository<Role, Long> {
-
-   Optional<Role> findRoleByName(String roleName);
-
+    Optional<Role> findRoleByName(String roleName);
     boolean existsByName(String roleName);
 }

@@ -1,9 +1,10 @@
-package com.evoapartments.accommodationbe.resource.reservation;
+package com.evoapartments.accommodationbe.controller.reservation;
 
 import com.evoapartments.accommodationbe.exception.InvalidReservationRequestException;
 import com.evoapartments.accommodationbe.exception.ResourceNotFoundException;
 import com.evoapartments.accommodationbe.domain.accommodation.Accommodation;
 import com.evoapartments.accommodationbe.domain.reservation.ReservedAccommodation;
+import com.evoapartments.accommodationbe.response.HttpResponse;
 import com.evoapartments.accommodationbe.response.ReservedAccommodationResponse;
 import com.evoapartments.accommodationbe.response.AccommodationResponse;
 import com.evoapartments.accommodationbe.service.reservation.IReservedAccommodationService;
@@ -14,8 +15,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -26,15 +30,23 @@ public class ReservedAccommodationController {
 
     @GetMapping("/all-reservations")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<List<ReservedAccommodationResponse>> getAllReservations() {
+    public ResponseEntity<HttpResponse> getAllReservations() {
         List<ReservedAccommodation> reservations = accommodationReservedService.getAllReservations();
         List<ReservedAccommodationResponse> accommodationReservedResponses = new ArrayList<>();
         for (ReservedAccommodation accommodation : reservations) {
             ReservedAccommodationResponse reservedAccommodationResponse = getReservationResponse(accommodation);
             accommodationReservedResponses.add(reservedAccommodationResponse);
         }
-        return ResponseEntity.ok(accommodationReservedResponses);
-    }
+        return accommodationReservedResponses.isEmpty()
+                ? ResponseEntity.noContent().build()
+                :  ResponseEntity.created(URI.create("")).body(
+                HttpResponse.builder()
+                        .timeStamp(LocalDateTime.now().toString())
+                        .data(Map.of("reservations", accommodationReservedResponses))
+                        .message("Reservations list fetched successfully.")
+                        .status(HttpStatus.FOUND)
+                        .statusCode(HttpStatus.FOUND.value())
+                        .build());    }
 
     @GetMapping("confirmation/{confirmationCode}")
     @PreAuthorize("hasRole('ROLE_ADMIN') or (hasRole('ROLE_USER') and #email == principal.username)")
@@ -42,40 +54,70 @@ public class ReservedAccommodationController {
         try {
             ReservedAccommodation reservation = accommodationReservedService.findByReservationConfirmationCode(confirmationCode);
             ReservedAccommodationResponse reservationResponse = getReservationResponse(reservation);
-            return ResponseEntity.ok(reservationResponse);
-        }catch (ResourceNotFoundException e){
+            return ResponseEntity.created(URI.create("")).body(
+                    HttpResponse.builder()
+                            .timeStamp(LocalDateTime.now().toString())
+                            .data(Map.of("reservation", reservationResponse))
+                            .message("Reservation fetched successfully.")
+                            .status(HttpStatus.FOUND)
+                            .statusCode(HttpStatus.FOUND.value())
+                            .build());
+        } catch (ResourceNotFoundException e){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
     }
 
     @PreAuthorize("hasRole('ROLE_ADMIN') or (hasRole('ROLE_USER') and #email == principal.username)")
     @GetMapping("/user/{email}/bookings")
-    public ResponseEntity<List<ReservedAccommodationResponse>> getBookingsByUserEmail(@PathVariable String email) {
+    public ResponseEntity<HttpResponse> getBookingsByUserEmail(@PathVariable String email) {
         List<ReservedAccommodation> bookings = accommodationReservedService.getReservationsByUsername(email);
         List<ReservedAccommodationResponse> bookingResponses = new ArrayList<>();
         for (ReservedAccommodation booking : bookings) {
             ReservedAccommodationResponse bookingResponse = getReservationResponse(booking);
             bookingResponses.add(bookingResponse);
         }
-        return ResponseEntity.ok(bookingResponses);
+        return bookingResponses.isEmpty()
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.created(URI.create("")).body(
+                HttpResponse.builder()
+                        .timeStamp(LocalDateTime.now().toString())
+                        .data(Map.of("reservation", bookingResponses))
+                        .message("User reservations fetched successfully.")
+                        .status(HttpStatus.FOUND)
+                        .statusCode(HttpStatus.FOUND.value())
+                        .build());
     }
 
     @PostMapping("/accommodation/{accommodationId}/reservation")
     public ResponseEntity<?> saveReservation(@PathVariable Long accommodationId,
                                              @RequestBody ReservedAccommodation reservationRequest){
-        System.out.println(reservationRequest);
         try {
             String confirmationCode = accommodationReservedService.saveReservation(accommodationId, reservationRequest);
-            return ResponseEntity.ok("Accommodation reserved successfully. Reservation confirmation code is : " +confirmationCode);
-        } catch (InvalidReservationRequestException e){
-            return ResponseEntity.badRequest().body(e.getMessage());
+            ReservedAccommodationResponse response = getReservationResponse(reservationRequest);
+            return ResponseEntity.created(URI.create("")).body(
+                    HttpResponse.builder()
+                            .timeStamp(LocalDateTime.now().toString())
+                            .data(Map.of("reservation", response))
+                            .message("Accommodation reserved successfully. Confirmation code is: " + confirmationCode)
+                            .status(HttpStatus.OK)
+                            .statusCode(HttpStatus.OK.value())
+                            .build());
+        } catch (InvalidReservationRequestException ex){
+            return ResponseEntity.badRequest().body(ex.getMessage());
         }
     }
 
     @PreAuthorize("hasRole('ROLE_ADMIN') or (hasRole('ROLE_USER') and #email == principal.username)")
     @DeleteMapping("/reservation/{reservationId}/delete")
-    public void cancelReservation(@PathVariable("reservationId") Long reservationId){
+    public ResponseEntity<HttpResponse> cancelReservation(@PathVariable("reservationId") Long reservationId){
         accommodationReservedService.cancelReservation(reservationId);
+        return ResponseEntity.created(URI.create("")).body(
+                HttpResponse.builder()
+                        .timeStamp(LocalDateTime.now().toString())
+                        .message("Reservation " + reservationId + " canceled successfully.")
+                        .status(HttpStatus.OK)
+                        .statusCode(HttpStatus.OK.value())
+                        .build());
      }
 
     private ReservedAccommodationResponse getReservationResponse(ReservedAccommodation reservation) {

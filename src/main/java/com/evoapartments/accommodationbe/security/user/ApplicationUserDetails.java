@@ -1,6 +1,6 @@
 package com.evoapartments.accommodationbe.security.user;
 
-import com.evoapartments.accommodationbe.model.user.ApplicationUser;
+import com.evoapartments.accommodationbe.domain.user.ApplicationUser;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,22 +17,19 @@ import java.util.stream.Collectors;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class AccommodationUserDetails implements UserDetails {
-
+public class ApplicationUserDetails implements UserDetails {
     private Long id;
     private String email;
     private String password;
     private Collection<GrantedAuthority> grantedAuthorities;
 
-    public static AccommodationUserDetails buildUserDetails(ApplicationUser user){
+    public static ApplicationUserDetails buildUserDetails(ApplicationUser user){
         List<GrantedAuthority> authorities = user.getRoles()
                 .stream()
                 .map(role -> new SimpleGrantedAuthority(role.getName()))
                 .collect(Collectors.toList());
-
-        return new AccommodationUserDetails(user.getId(), user.getEmail(), user.getPassword(), authorities);
+        return new ApplicationUserDetails(user.getId(), user.getEmail(), user.getPassword(), authorities);
     }
-
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

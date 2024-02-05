@@ -1,8 +1,8 @@
-package com.evoapartments.accommodationbe.security.configuration;
+package com.evoapartments.accommodationbe.security.config;
 
 import com.evoapartments.accommodationbe.security.jwt.AuthenticationTokenFilter;
 import com.evoapartments.accommodationbe.security.jwt.JwtAuthenticationEntryPoint;
-import com.evoapartments.accommodationbe.security.user.AccommodationUserDetailsService;
+import com.evoapartments.accommodationbe.security.user.ApplicationUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,7 +22,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @EnableMethodSecurity(securedEnabled = true, jsr250Enabled = true, prePostEnabled = true)
 public class WebSecurityConfig {
-    private final AccommodationUserDetailsService userDetailsService;
+    private final ApplicationUserDetailsService userDetailsService;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
     @Bean
@@ -54,13 +54,13 @@ public class WebSecurityConfig {
                 .exceptionHandling(exceptionConfig -> exceptionConfig.authenticationEntryPoint(jwtAuthenticationEntryPoint))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorization -> authorization
-                        .requestMatchers("/auth/**", "" +
+                        .requestMatchers("/auth/**",
+                                "/users/**",
                                 "/accommodations/**",
                                 "/reservations/**",
                                 "/accommodation-types/**")
                         .permitAll()
                         .requestMatchers("/roles/**")
-//                                "/add-accommodation/**")
                         .hasRole("ADMIN")
                         .anyRequest()
                         .authenticated());

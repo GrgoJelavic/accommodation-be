@@ -1,6 +1,5 @@
-package com.evoapartments.accommodationbe.model.user;
+package com.evoapartments.accommodationbe.domain.user;
 
-import com.evoapartments.accommodationbe.model.user.ApplicationUser;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -22,7 +21,7 @@ public class Role {
     private String name;
 
     @JsonIgnore
-    @ManyToMany(mappedBy = "roles")
+    @ManyToMany(mappedBy = "roles", fetch = FetchType.EAGER)
     private Collection<ApplicationUser> users = new HashSet<>();
 
     public Role(String name) {
@@ -48,6 +47,5 @@ public class Role {
 
     public String getName(){
         return name != null ? name : "";
-
     }
 }

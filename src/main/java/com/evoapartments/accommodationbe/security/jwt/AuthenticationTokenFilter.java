@@ -1,7 +1,6 @@
-package com.evoapartments.accommodationbe.security;
+package com.evoapartments.accommodationbe.security.jwt;
 
-import com.evoapartments.accommodationbe.security.jwt.JwtUtils;
-import com.evoapartments.accommodationbe.security.user.AccommodationUserDetailsService;
+import com.evoapartments.accommodationbe.security.user.ApplicationUserDetailsService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,22 +18,17 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 public class AuthenticationTokenFilter extends OncePerRequestFilter {
-
     @Autowired
     private JwtUtils jwtUtils;
-
     @Autowired
-    private AccommodationUserDetailsService userDetailsService;
-
+    private ApplicationUserDetailsService userDetailsService;
     private static final Logger logger = LoggerFactory.getLogger(AuthenticationTokenFilter.class);
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-
         try {
             String jwt = parseJwt(request);
-
             if (jwt != null && jwtUtils.validateToken(jwt)){
                 String email = jwtUtils.getUserNameFromToken(jwt);
                 UserDetails userDetails = userDetailsService.loadUserByUsername(email);
@@ -46,18 +40,14 @@ public class AuthenticationTokenFilter extends OncePerRequestFilter {
         } catch (Exception ex){
             logger.error("User authentication failed: {}", ex.getMessage());
         }
-
         filterChain.doFilter(request,response);
     }
 
     private String parseJwt(HttpServletRequest request){
-
         String authHeader = request.getHeader("Authorization");
-
         if (StringUtils.hasText(authHeader) && authHeader.startsWith("Bearer ")){
             return authHeader.substring(7);
         }
-
         return null;
     }
 }

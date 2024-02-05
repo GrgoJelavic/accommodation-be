@@ -1,4 +1,4 @@
-package com.evoapartments.accommodationbe.domain.mail;
+package com.evoapartments.accommodationbe.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;

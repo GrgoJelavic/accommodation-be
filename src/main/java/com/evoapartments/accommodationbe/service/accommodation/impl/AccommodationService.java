@@ -1,9 +1,11 @@
-package com.evoapartments.accommodationbe.service.accommodation;
+package com.evoapartments.accommodationbe.service.accommodation.impl;
 
 import com.evoapartments.accommodationbe.exception.InternalServerException;
 import com.evoapartments.accommodationbe.exception.ResourceNotFoundException;
 import com.evoapartments.accommodationbe.domain.accommodation.Accommodation;
 import com.evoapartments.accommodationbe.repository.accommodation.AccommodationRepository;
+import com.evoapartments.accommodationbe.service.accommodation.IAccommodationService;
+import com.evoapartments.accommodationbe.service.accommodation.ITypeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -59,42 +61,26 @@ public class AccommodationService implements IAccommodationService {
     }
 
     @Override
-    public Accommodation updateAccommodation(Long accommodationId, Long accommodationTypeId, BigDecimal accommodationPrice,
+    public Accommodation updateAccommodation(Long accommodationId, Long typeId, BigDecimal accommodationPrice,
                                              byte[] photoBytes, String accommodationName, Integer gustCapacity,
                                              String address, String city, Integer zipCode, String country) {
         Accommodation accommodation = accommodationRepository.findById(accommodationId)
                 .orElseThrow(()-> new ResourceNotFoundException("Accommodation not found."));
-        if (accommodationTypeId != null) {
-            accommodation.setType(accommodationTypeService.getAccommodationTypeById(accommodationTypeId).get());
-         }
-        if (accommodationPrice != null) {
-            accommodation.setAccommodationPrice(accommodationPrice);
-        }
-        if(photoBytes != null && photoBytes.length > 0) {
+        if (typeId != null) accommodation.setType(accommodationTypeService.getAccommodationTypeById(typeId).get());
+        if (accommodationPrice != null) accommodation.setAccommodationPrice(accommodationPrice);
+        if (photoBytes != null && photoBytes.length > 0) {
             try {
                 accommodation.setPhoto(new SerialBlob(photoBytes));
-            }catch (SQLException ex) {
+            } catch (SQLException ex) {
                 throw new InternalServerException("Error updating accommodation");
             }
         }
-        if (accommodationName != null) {
-            accommodation.setAccommodationName(accommodationName);
-        }
-        if (gustCapacity != null) {
-            accommodation.setGuestCapacity(gustCapacity);
-        }
-        if (address != null) {
-            accommodation.setAddress(address);
-        }
-        if (city != null) {
-            accommodation.setCity(city);
-        }
-        if (zipCode != null) {
-            accommodation.setZipCode(zipCode);
-        }
-        if (country != null) {
-            accommodation.setCountry(country);
-        }
+        if (accommodationName != null) accommodation.setAccommodationName(accommodationName);
+        if (gustCapacity != null) accommodation.setGuestCapacity(gustCapacity);
+        if (address != null) accommodation.setAddress(address);
+        if (city != null) accommodation.setCity(city);
+        if (zipCode != null) accommodation.setZipCode(zipCode);
+        if (country != null) accommodation.setCountry(country);
         return accommodationRepository.save(accommodation);
     }
 

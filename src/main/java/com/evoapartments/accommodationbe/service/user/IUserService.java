@@ -1,16 +1,20 @@
-package com.evoapartments.accommodationbe.service;
+package com.evoapartments.accommodationbe.service.user;
 
-import com.evoapartments.accommodationbe.model.user.ApplicationUser;
+import com.evoapartments.accommodationbe.domain.user.ApplicationUser;
 
 import java.util.List;
 
 public interface IUserService {
 
-    ApplicationUser registerUser(ApplicationUser user);
-
     List<ApplicationUser> getAllUsers();
 
-    void deleteUser(String email);
-
     ApplicationUser getUserByEmail(String email);
+
+    Boolean verifyToken(String token);
+
+    ApplicationUser saveUser(ApplicationUser user);
+
+    ApplicationUser updateUser(Long userId, String firstName, String lastName, String email, String password);
+
+    void deleteUser(String email);
 }

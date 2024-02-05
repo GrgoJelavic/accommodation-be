@@ -1,0 +1,17 @@
+#Database
+POSTGRES_SQL_USERNAME: postgres
+POSTGRES_SQL_PASSWORD: ######
+POSTGRES_SQL_HOST: localhost
+POSTGRES_SQL_PORT: 5432
+POSTGRES_SQL_DB: evo_apartments
+
+#Server
+SERVER_PORT: 9192
+ACTIVE_PROFILE: dev
+
+#Email
+EMAIL_HOST: smtp.gmail.com
+EMAIL_PORT: 587
+EMAIL_ID: ######
+EMAIL_PASSWORD: #######
+VERIFY_EMAIL_HOST: http://localhost:${SERVER_PORT}

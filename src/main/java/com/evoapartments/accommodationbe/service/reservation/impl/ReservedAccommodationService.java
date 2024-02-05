@@ -1,4 +1,4 @@
-package com.evoapartments.accommodationbe.service.reservation;
+package com.evoapartments.accommodationbe.service.reservation.impl;
 
 import com.evoapartments.accommodationbe.exception.InvalidReservationRequestException;
 import com.evoapartments.accommodationbe.exception.ResourceNotFoundException;
@@ -6,6 +6,7 @@ import com.evoapartments.accommodationbe.domain.accommodation.Accommodation;
 import com.evoapartments.accommodationbe.domain.reservation.ReservedAccommodation;
 import com.evoapartments.accommodationbe.repository.reservation.ReservedAccommodationRepository;
 import com.evoapartments.accommodationbe.service.accommodation.IAccommodationService;
+import com.evoapartments.accommodationbe.service.reservation.IReservedAccommodationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -46,8 +47,8 @@ public class ReservedAccommodationService implements IReservedAccommodationServi
 
     @Override
     public ReservedAccommodation findByReservationConfirmationCode(String confirmationCode) {
-        return  accommodationReservedRepository.findByReservationConfirmationCode(confirmationCode)
-                        .orElseThrow(() -> new ResourceNotFoundException("No reservation found with confirmation code :"+confirmationCode));
+        return  accommodationReservedRepository.findByReservationConfirmationCode(confirmationCode).orElseThrow(
+                () -> new ResourceNotFoundException("No reservation found with confirmation code: " + confirmationCode));
     }
 
     @Override
@@ -68,15 +69,11 @@ public class ReservedAccommodationService implements IReservedAccommodationServi
                                 || (reservationRequest.getCheckInDate().isAfter(existingReservation.getCheckInDate())
                                 && reservationRequest.getCheckInDate().isBefore(existingReservation.getCheckOutDate()))
                                 || (reservationRequest.getCheckInDate().isBefore(existingReservation.getCheckInDate())
-
                                 && reservationRequest.getCheckOutDate().equals(existingReservation.getCheckOutDate()))
                                 || (reservationRequest.getCheckInDate().isBefore(existingReservation.getCheckInDate())
-
                                 && reservationRequest.getCheckOutDate().isAfter(existingReservation.getCheckOutDate()))
-
                                 || (reservationRequest.getCheckInDate().equals(existingReservation.getCheckOutDate())
                                 && reservationRequest.getCheckOutDate().equals(existingReservation.getCheckInDate()))
-
                                 || (reservationRequest.getCheckInDate().equals(existingReservation.getCheckOutDate())
                                 && reservationRequest.getCheckOutDate().equals(reservationRequest.getCheckInDate()))
                 );

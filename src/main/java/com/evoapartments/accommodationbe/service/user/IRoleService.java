@@ -1,19 +1,22 @@
-package com.evoapartments.accommodationbe.service;
+package com.evoapartments.accommodationbe.service.user;
 
-import com.evoapartments.accommodationbe.model.user.Role;
-import com.evoapartments.accommodationbe.model.user.ApplicationUser;
+import com.evoapartments.accommodationbe.domain.user.Role;
+import com.evoapartments.accommodationbe.domain.user.ApplicationUser;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 @Service
 public interface IRoleService {
+
     List<Role> getRoles();
+
+    Role findRoleByName(String name);
 
     Role createRole(Role role);
 
-    void deleteRole(Long roleId);
+    Role updateUserRole(Long roleId, String name);
 
-    Role findRoleByName(String name);
+    void deleteRole(Long roleId);
 
     ApplicationUser removeRoleFromUser(Long userId, Long roleId);
 

@@ -1,9 +1,10 @@
-package com.evoapartments.accommodationbe.service.accommodation;
+package com.evoapartments.accommodationbe.service.accommodation.impl;
 
 import com.evoapartments.accommodationbe.exception.ResourceNotFoundException;
 import com.evoapartments.accommodationbe.exception.RoleAlreadyExistsException;
 import com.evoapartments.accommodationbe.domain.accommodation.Type;
 import com.evoapartments.accommodationbe.repository.accommodation.TypeRepository;
+import com.evoapartments.accommodationbe.service.accommodation.ITypeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
@@ -47,9 +48,8 @@ public class TypeService implements ITypeService {
     public Type updateAccommodationType(Long typeId, String typeName, String description) {
         Type accommodationType = accommodationTypeRepository.findById(typeId).orElseThrow(
                 () -> new ResourceNotFoundException("Accommodation type not found."));
-        if (typeName != null) {
+        if (typeName != null)
             accommodationType.setTypeName(typeName);
-        }
         if (description != null) {
             accommodationType.setDescription(description);
         }

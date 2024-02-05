@@ -1,4 +1,4 @@
-package com.evoapartments.accommodationbe.security.configuration;
+package com.evoapartments.accommodationbe.security.config;
 
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;

@@ -1,6 +1,6 @@
-package com.evoapartments.accommodationbe.service;
+package com.evoapartments.accommodationbe.service.accommodation;
 
-import com.evoapartments.accommodationbe.model.accommodation.Accommodation;
+import com.evoapartments.accommodationbe.domain.accommodation.Accommodation;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -11,19 +11,10 @@ import java.util.List;
 import java.util.Optional;
 
 public interface IAccommodationService {
-    Accommodation addNewAccommodation(Long accommodationTypeId, BigDecimal accommodationPrice, MultipartFile photo, String accommodationName,
-                                      String address, String city, Integer zipCode, String country) throws IOException, SQLException;
-
-    List<String> getAllAccommodationNames();
 
     List<Accommodation> getAllAccommodations();
 
-    byte[] getAccommodationMainPhotoByAccommodationId(Long accommodationId) throws SQLException;
-
-    void deleteAccommodation(Long accommodationId);
-
-    Accommodation updateAccommodation(Long accommodationId, Long accommodationTypeId, BigDecimal accommodationPrice, byte[] photoBytes,
-                                      String accommodationName, String address, String city, Integer zipCode, String country);
+    List<String> getAllAccommodationNames();
 
     Optional<Accommodation> getAccommodationById(Long accommodationId);
 
@@ -31,7 +22,15 @@ public interface IAccommodationService {
 
     List<Accommodation> getAccommodationsByTypeId(Long accommodationTypeId);
 
+    byte[] getAccommodationMainPhotoByAccommodationId(Long accommodationId) throws SQLException;
 
+    Accommodation addNewAccommodation(Long accommodationTypeId, BigDecimal accommodationPrice, MultipartFile photo,
+                                      String accommodationName, Integer guestCapacity, String address, String city,
+                                      Integer zipCode, String country) throws IOException, SQLException;
 
+    Accommodation updateAccommodation(Long accommodationId, Long accommodationTypeId, BigDecimal accommodationPrice,
+                                      byte[] photoBytes, String accommodationName, Integer guestCapacity, String address,
+                                      String city, Integer zipCode, String country);
 
+    void deleteAccommodation(Long accommodationId);
 }

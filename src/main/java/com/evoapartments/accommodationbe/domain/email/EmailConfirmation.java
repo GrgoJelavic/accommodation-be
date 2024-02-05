@@ -1,12 +1,10 @@
-package com.evoapartments.accommodationbe.domain.mail;
+package com.evoapartments.accommodationbe.domain.email;
 
 import com.evoapartments.accommodationbe.domain.user.ApplicationUser;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.experimental.SuperBuilder;
-import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 
 import java.time.LocalDateTime;

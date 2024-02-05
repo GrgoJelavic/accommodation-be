@@ -1,4 +1,4 @@
-package com.evoapartments.accommodationbe.service.user;
+package com.evoapartments.accommodationbe.service.user.impl;
 
 import com.evoapartments.accommodationbe.exception.ResourceNotFoundException;
 import com.evoapartments.accommodationbe.exception.RoleAlreadyExistsException;
@@ -7,6 +7,7 @@ import com.evoapartments.accommodationbe.domain.user.Role;
 import com.evoapartments.accommodationbe.domain.user.ApplicationUser;
 import com.evoapartments.accommodationbe.repository.user.RoleRepository;
 import com.evoapartments.accommodationbe.repository.user.UserRepository;
+import com.evoapartments.accommodationbe.service.user.IRoleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -34,7 +35,7 @@ public class RoleService implements IRoleService {
     public Role createRole(Role role) {
         String roleName = "ROLE_" + role.getName().toUpperCase();
         Role newRole = new Role(roleName);
-        if(roleRepository.existsByName(roleName)){
+        if (roleRepository.existsByName(roleName)) {
             throw new RoleAlreadyExistsException(role.getName() + " role already exists");
         }
         return roleRepository.save(newRole);
@@ -61,24 +62,23 @@ public class RoleService implements IRoleService {
     public ApplicationUser removeRoleFromUser(Long userId, Long roleId) {
         Optional<ApplicationUser> user = userRepository.findById(userId);
         Optional<Role> role = roleRepository.findById(roleId);
-        if(role.isPresent() && role.get().getUsers().contains(user.get())){
+        if (role.isPresent() && role.get().getUsers().contains(user.get())){
             role.get().removeRoleFromUser(user.get());
             roleRepository.save(role.get());
             return user.get();
         }
-        throw new UsernameNotFoundException("User not found");
+        throw new UsernameNotFoundException("Role not found");
     }
 
     @Override
     public ApplicationUser assignRoleToUser(Long userId, Long roleId) {
         Optional<ApplicationUser> user = userRepository.findById(userId);
         Optional<Role> role = roleRepository.findById(roleId);
-
-        if(user.isPresent() && user.get().getRoles().contains(role.get())){
-            throw new UserAlreadyExistsException(user.get().getFirstName() + " is already assigned to the role " + role.get().getName());
+        if (user.isPresent() && user.get().getRoles().contains(role.get())) {
+            throw new UserAlreadyExistsException(user.get().getFirstName() + " is already assigned " +
+                    "to the role " + role.get().getName());
         }
-
-        if(role.isPresent()){
+        if (role.isPresent()) {
             role.get().assignRoleToUser(user.get());
             roleRepository.save(role.get());
         }

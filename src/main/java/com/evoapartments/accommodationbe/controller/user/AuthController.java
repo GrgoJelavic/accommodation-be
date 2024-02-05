@@ -27,14 +27,13 @@ import java.util.stream.Collectors;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/auth")
-public class AuthenticationController {
+public class AuthController {
     private final IUserService userService;
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
 
     @PostMapping("/register-user")
     public ResponseEntity<?> registerUser(@RequestBody ApplicationUser user){
-//        Todo: validation that we are receiving good data from user
         try {
             ApplicationUser newUser = userService.saveUser(user);
             return ResponseEntity.created(URI.create("")).body(
@@ -79,4 +78,5 @@ public class AuthenticationController {
                             .status(HttpStatus.OK)
                             .statusCode(HttpStatus.OK.value())
                             .build());
-    }}
+    }
+}

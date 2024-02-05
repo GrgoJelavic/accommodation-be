@@ -1,9 +1,11 @@
-package com.evoapartments.accommodationbe.service.email;
+package com.evoapartments.accommodationbe.service.email.impl;
 
+import com.evoapartments.accommodationbe.service.email.IEmailService;
 import jakarta.activation.DataHandler;
 import jakarta.activation.DataSource;
 import jakarta.activation.FileDataSource;
 import jakarta.mail.BodyPart;
+import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeBodyPart;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMultipart;
@@ -20,13 +22,14 @@ import org.thymeleaf.context.Context;
 
 import java.io.File;
 import java.util.Map;
+import java.util.Objects;
 
 import static com.evoapartments.accommodationbe.utils.EmailUtils.getEmailMessage;
 import static com.evoapartments.accommodationbe.utils.EmailUtils.getVerificationUrl;
 
 @Service
 @RequiredArgsConstructor
-public class EmailService implements IEmailService{
+public class EmailService implements IEmailService {
     public static final String NEW_USER_ACCOUNT_VERIFICATION = "New user account verification";
     public static final String UTF_8_ENCODING = "UTF-8";
     private static final String EMAIL_TEMPLATE = "emailTemplate";
@@ -58,18 +61,9 @@ public class EmailService implements IEmailService{
     public void sendMimeMessageWithAttachments(String name, String emailTo, String token) {
         try {
             MimeMessage mimeMessage = getMimeMessage();
-            MimeMessageHelper mimeHelper = new MimeMessageHelper(mimeMessage, true, UTF_8_ENCODING);
-            mimeHelper.setPriority(1);
-            mimeHelper.setSubject(NEW_USER_ACCOUNT_VERIFICATION);
-            mimeHelper.setFrom(emailFrom);
-            mimeHelper.setTo(emailTo);
-            mimeHelper.setText(getEmailMessage(name, host, token));
-            FileSystemResource balc = new FileSystemResource(new File(System.getProperty("user.home") + "/Downloads/images/balkon.jpg"));
-            FileSystemResource room = new FileSystemResource(new File(System.getProperty("user.home") + "/Downloads/images/soba.jpg"));
-            FileSystemResource livi = new FileSystemResource(new File(System.getProperty("user.home") + "/Downloads/images/dnevni.jpg"));
-            mimeHelper.addAttachment(balc.getFilename(), balc);
-            mimeHelper.addAttachment(room.getFilename(), room);
-            mimeHelper.addAttachment(livi.getFilename(), livi);
+            MimeMessageHelper mimeHelper = getMimeMessageHelper(name, emailTo, token, mimeMessage);
+            FileSystemResource soba = new FileSystemResource(new File(System.getProperty("user.home") + "/Downloads/images/soba.jpg"));
+            mimeHelper.addAttachment(Objects.requireNonNull(soba.getFilename()), soba);
             emailSender.send(mimeMessage);
         } catch (Exception ex) {
             throw new RuntimeException(ex.getMessage());
@@ -80,15 +74,8 @@ public class EmailService implements IEmailService{
     @Async
     public void sendMimeMessageWithEmbeddedFiles(String name, String emailTo, String token) {
         try {
-            Context context = new Context();
             MimeMessage mimeMessage = getMimeMessage();
-            MimeMessageHelper mimeHelper = new MimeMessageHelper(mimeMessage, true, UTF_8_ENCODING);
-            mimeHelper.setPriority(1);
-            mimeHelper.setSubject(NEW_USER_ACCOUNT_VERIFICATION);
-            mimeHelper.setFrom(emailFrom);
-            mimeHelper.setTo(emailTo);
-            mimeHelper.setText(getEmailMessage(name, host, token));
-
+            getMimeMessageHelper(name, emailTo, token, mimeMessage);
             emailSender.send(mimeMessage);
         } catch (Exception ex) {
             throw new RuntimeException(ex.getMessage());
@@ -100,8 +87,6 @@ public class EmailService implements IEmailService{
     public void sendHtmlEmail(String name, String emailTo, String token) {
         try {
             Context context = new Context();
-//            context.setVariable("name", name);
-//            context.setVariable("url", getVerificationUrl(host, token));
             context.setVariables(Map.of("firstName", name, "url", getVerificationUrl(host, token)));
             String text = templateEngine.process(EMAIL_TEMPLATE, context);
             MimeMessage mimeMessage = getMimeMessage();
@@ -111,12 +96,6 @@ public class EmailService implements IEmailService{
             mimeHelper.setFrom(emailFrom);
             mimeHelper.setTo(emailTo);
             mimeHelper.setText(text, true);
-//            FileSystemResource balc = new FileSystemResource(new File(System.getProperty("user.home") + "/Downloads/images/balkon.jpg"));
-//            FileSystemResource room = new FileSystemResource(new File(System.getProperty("user.home") + "/Downloads/images/soba.jpg"));
-//            FileSystemResource livi = new FileSystemResource(new File(System.getProperty("user.home") + "/Downloads/images/dnevni.jpg"));
-//            mimeHelper.addAttachment(balc.getFilename(), balc);
-//            mimeHelper.addAttachment(room.getFilename(), room);
-//            mimeHelper.addAttachment(livi.getFilename(), livi);
             emailSender.send(mimeMessage);
         } catch (Exception ex) {
             throw new RuntimeException(ex.getMessage());
@@ -134,35 +113,43 @@ public class EmailService implements IEmailService{
             mimeHelper.setFrom(emailFrom);
             mimeHelper.setTo(emailTo);
             Context context = new Context();
-//            context.setVariable("name", name);
-//            context.setVariable("url", getVerificationUrl(host, token));
             context.setVariables(Map.of("firstName", name, "url", getVerificationUrl(host, token)));
             String text = templateEngine.process(EMAIL_TEMPLATE, context);
             mimeHelper.setText(text, true);
-//            FileSystemResource balc = new FileSystemResource(new File(System.getProperty("user.home") + "/Downloads/images/balkon.jpg"));
-//            FileSystemResource room = new FileSystemResource(new File(System.getProperty("user.home") + "/Downloads/images/soba.jpg"));
-//            FileSystemResource livi = new FileSystemResource(new File(System.getProperty("user.home") + "/Downloads/images/dnevni.jpg"));
-//            mimeHelper.addAttachment(balc.getFilename(), balc);
-//            mimeHelper.addAttachment(room.getFilename(), room);
-//            mimeHelper.addAttachment(livi.getFilename(), livi);
-            // externilize in one method, anduse it for text and files
             MimeMultipart mimeMultipart = new MimeMultipart("related");
-            BodyPart messageBodyPart = new MimeBodyPart();
-            messageBodyPart.setContent(text, CONTENT_TYPE);
-            mimeMultipart.addBodyPart(messageBodyPart);
-
-            BodyPart imageBodyPart = new MimeBodyPart();
-            DataSource dataSource = new FileDataSource(System.getProperty("user.home") + "/Downloads/images/dnevni.jpg");
-            imageBodyPart.setDataHandler(new DataHandler(dataSource));
-            imageBodyPart.setHeader("Content-ID", "image");
-            mimeMultipart.addBodyPart(imageBodyPart);
-
+            BodyPart bodyPart = getTextBodyPart(text);
+            mimeMultipart.addBodyPart(bodyPart);
+            bodyPart = getImageBodyPart();
+            mimeMultipart.addBodyPart(bodyPart);
             mimeMessage.setContent(mimeMultipart);
-
             emailSender.send(mimeMessage);
         } catch (Exception ex) {
             throw new RuntimeException(ex.getMessage());
         }
+    }
+
+    private MimeMessageHelper getMimeMessageHelper(String name, String emailTo, String token, MimeMessage mimeMessage) throws MessagingException {
+        MimeMessageHelper mimeHelper = new MimeMessageHelper(mimeMessage, true, UTF_8_ENCODING);
+        mimeHelper.setPriority(1);
+        mimeHelper.setSubject(NEW_USER_ACCOUNT_VERIFICATION);
+        mimeHelper.setFrom(emailFrom);
+        mimeHelper.setTo(emailTo);
+        mimeHelper.setText(getEmailMessage(name, host, token));
+        return mimeHelper;
+    }
+
+    private static BodyPart getImageBodyPart() throws MessagingException {
+        BodyPart imageBodyPart = new MimeBodyPart();
+        DataSource dataSource = new FileDataSource(System.getProperty("user.home") + "/Downloads/images/soba.jpg");
+        imageBodyPart.setDataHandler(new DataHandler(dataSource));
+        imageBodyPart.setHeader("Content-ID", "image");
+        return imageBodyPart;
+    }
+
+    private static BodyPart getTextBodyPart(String text) throws MessagingException {
+        BodyPart messageBodyPart = new MimeBodyPart();
+        messageBodyPart.setContent(text, CONTENT_TYPE);
+        return messageBodyPart;
     }
 
     private MimeMessage getMimeMessage() {

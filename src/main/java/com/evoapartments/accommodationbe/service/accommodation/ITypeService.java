@@ -1,15 +1,15 @@
 package com.evoapartments.accommodationbe.service.accommodation;
 
-import com.evoapartments.accommodationbe.model.accommodation.Type;
+import com.evoapartments.accommodationbe.domain.accommodation.Type;
 
 import java.util.List;
 import java.util.Optional;
 
-public interface IAccommodationTypeService {
+public interface ITypeService {
 
-//    List<AccommodationType> getAllAccommodationTypes();
+    List<Type> getAllAccommodationTypes();
 
-    List<Type> getAllAccommodationTypesWithReservations();
+    List<Type> getAllAccommodationTypesWithAccommodations();
 
     Optional<Type> getAccommodationTypeById(Long id);
 
@@ -17,5 +17,7 @@ public interface IAccommodationTypeService {
 
     Type createAccommodationType(Type type);
 
-    List<Type> getAccommodationTypes();
+    Type updateAccommodationType(Long typeId, String typeName, String description);
+
+    void deleteAccommodationType(Long typeId);
 }

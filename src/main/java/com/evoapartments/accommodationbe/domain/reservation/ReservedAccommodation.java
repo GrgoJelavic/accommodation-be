@@ -1,6 +1,6 @@
-package com.evoapartments.accommodationbe.model.reservation;
+package com.evoapartments.accommodationbe.domain.reservation;
 
-import com.evoapartments.accommodationbe.model.accommodation.Accommodation;
+import com.evoapartments.accommodationbe.domain.accommodation.Accommodation;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -15,6 +15,8 @@ public class ReservedAccommodation {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    private String guestFullName;
+    private String guestEmail;
 
     @Column(name = "check_in")
     private LocalDate checkInDate;
@@ -22,9 +24,6 @@ public class ReservedAccommodation {
     @Column(name = "check_out")
     private LocalDate checkOutDate;
 
-    private String guestFullName;
-
-    private String guestEmail;
     @Column(name = "adults")
     private int numberOfAdults;
 

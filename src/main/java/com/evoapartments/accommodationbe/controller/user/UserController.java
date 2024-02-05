@@ -1,65 +1,87 @@
-package com.evoapartments.accommodationbe.resource.user;
+package com.evoapartments.accommodationbe.controller.user;
 
 import com.evoapartments.accommodationbe.domain.user.ApplicationUser;
 import com.evoapartments.accommodationbe.response.ApplicationUserResponse;
+import com.evoapartments.accommodationbe.response.HttpResponse;
 import com.evoapartments.accommodationbe.service.user.IUserService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
+@Slf4j
 @RestController
-@RequestMapping("/users")
 @RequiredArgsConstructor
+@RequestMapping("/users")
 public class UserController {
     private final IUserService userService;
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+
     @GetMapping("/all-users")
-    public ResponseEntity<List<ApplicationUser>> getUsers(){
-        return new ResponseEntity<>(userService.getAllUsers(), HttpStatus.FOUND);
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<HttpResponse> getAllUsers(){
+        List<ApplicationUser> users = userService.getAllUsers();
+            return ResponseEntity.created(URI.create("")).body(
+                    HttpResponse.builder()
+                            .timeStamp(LocalDateTime.now().toString())
+                            .data(Map.of("users", users, "size", users.size()))
+                            .message("Users list fetched successfully.")
+                            .status(HttpStatus.FOUND)
+                            .statusCode(HttpStatus.FOUND.value())
+                            .build());
     }
 
+    @GetMapping("/user/{email}")
     @PreAuthorize("hasRole('ROLE_USER') or hasRole('ROLE_ADMIN')")
-    @GetMapping("/{email}")
-    public ResponseEntity<?> getUserByEmail(@PathVariable("email") String email){
-        try {
-            ApplicationUser theUser = userService.getUserByEmail(email);
-            return ResponseEntity.ok(theUser);
-        } catch (UsernameNotFoundException ex){
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
-        } catch (Exception ex){
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching user");
-        }
+    public ResponseEntity<HttpResponse> getUserByEmail(@PathVariable("email") String email){
+        ApplicationUser user = userService.getUserByEmail(email);
+        return ResponseEntity.created(URI.create("")).body(
+                HttpResponse.builder()
+                        .timeStamp(LocalDateTime.now().toString())
+                        .data(Map.of("user", user))
+                        .message("User found successfully.")
+                        .status(HttpStatus.FOUND)
+                        .statusCode(HttpStatus.FOUND.value())
+                        .build());
     }
 
     @PutMapping("/update/user/{userId}")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<ApplicationUserResponse> updateUser(@PathVariable Long userId,
+    @PreAuthorize("hasRole('ROLE_ADMIN') or (hasRole('ROLE_USER') and #email == principal.username)")
+    public ResponseEntity<HttpResponse> updateUser(@PathVariable Long userId,
                                                               @RequestParam(required = false) String firstName,
                                                               @RequestParam(required = false) String lastName,
                                                               @RequestParam(required = false) String email,
                                                               @RequestParam(required = false) String password) {
-        // TODO: fix - unable to login after password update
         ApplicationUser user = userService.updateUser(userId, firstName, lastName, email, password);
         ApplicationUserResponse userResponse = getAppUserResponse(user);
-        return ResponseEntity.ok(userResponse);
+        return ResponseEntity.created(URI.create("")).body(
+                HttpResponse.builder()
+                        .timeStamp(LocalDateTime.now().toString())
+                        .data(Map.of("user", userResponse))
+                        .message("User updated successfully.")
+                        .status(HttpStatus.OK)
+                        .statusCode(HttpStatus.OK.value())
+                        .build());
     }
 
-    @DeleteMapping("/delete/{email}")
+
+    @DeleteMapping("/delete/user/{email}")
     @PreAuthorize("hasRole('ROLE_ADMIN') or (hasRole('ROLE_USER') and #email == principal.username)")
-    public ResponseEntity<String> deleteUser(@PathVariable String email){
-        try {
-            userService.deleteUser(email);
-            return ResponseEntity.ok("User is deleted successfully");
-        } catch (UsernameNotFoundException ex){
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
-        } catch (Exception ex){
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error deleting the user");
-        }
+    public ResponseEntity<HttpResponse> deleteUser(@PathVariable String email){
+        userService.deleteUser(email);
+        return ResponseEntity.created(URI.create("")).body(
+                HttpResponse.builder()
+                        .timeStamp(LocalDateTime.now().toString())
+                        .message("User has been deleted successfully.")
+                        .status(HttpStatus.NO_CONTENT)
+                        .statusCode(HttpStatus.NO_CONTENT.value())
+                        .build());
     }
 
     private ApplicationUserResponse getAppUserResponse(ApplicationUser user) {

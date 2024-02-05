@@ -1,10 +1,11 @@
-package com.evoapartments.accommodationbe.service;
+package com.evoapartments.accommodationbe.service.reservation;
 
-import com.evoapartments.accommodationbe.model.reservation.ReservedAccommodation;
+import com.evoapartments.accommodationbe.domain.reservation.ReservedAccommodation;
 
 import java.util.List;
 
-public interface IAccommodationReservedService {
+public interface IReservedAccommodationService {
+
     List<ReservedAccommodation> getAllAccommodationReservationsByAccommodationId(Long accommodationId);
 
     String saveReservation(Long accommodationId, ReservedAccommodation reservationRequest);

@@ -1,12 +1,10 @@
-package com.evoapartments.accommodationbe.model.accommodation;
+package com.evoapartments.accommodationbe.domain.accommodation;
 
-import com.evoapartments.accommodationbe.model.accommodation.Accommodation;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
-
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,12 +27,4 @@ public class Type {
     public Type() {
         this.accommodations = new ArrayList<>();
     }
-
-//    public void addAccommodation(Accommodation accommodation){
-//        if(accommodations == null){
-//            accommodations = new ArrayList<>();
-//        }
-//        accommodations.add(accommodation);
-//        accommodation.setType(this);
-//    }
 }
