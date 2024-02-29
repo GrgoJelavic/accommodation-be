@@ -6,9 +6,7 @@ import com.evoapartments.accommodationbe.domain.accommodation.Type;
 import com.evoapartments.accommodationbe.repository.accommodation.TypeRepository;
 import com.evoapartments.accommodationbe.service.accommodation.ITypeService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
@@ -29,7 +27,7 @@ public class TypeService implements ITypeService {
     }
 
     public Optional<Type> getAccommodationTypeById(Long id) {
-        return Optional.of(accommodationTypeRepository.findById(id).get());
+        return Optional.ofNullable(accommodationTypeRepository.findById(id).get());
     }
 
     public List<String> getAllAccommodationTypeNames(){
@@ -56,8 +54,6 @@ public class TypeService implements ITypeService {
         return accommodationTypeRepository.save(accommodationType);
     }
 
-    @DeleteMapping("delete/accommodation-type/{typeId}")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @Override
     public void deleteAccommodationType(@PathVariable Long typeId) {
         Optional<Type> theType = accommodationTypeRepository.findById(typeId);
