@@ -10,6 +10,8 @@ public interface ICalendarSyncService {
 
     List<CalendarSync> getAllSynchronizedCalendars();
 
+    String getGoogleCalendarIdExportByAccommodationId(Long accommodationId);
+
     CalendarSync createCalendarSynchronization(Long accommodationId, CalendarSync calendarSync);
 
     CalendarSync updateCalendarSynchronization(Long calendarSyncId, String description, String googleCalendarId, String syncType);

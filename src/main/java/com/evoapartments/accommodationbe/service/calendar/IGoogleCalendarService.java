@@ -1,7 +1,7 @@
 package com.evoapartments.accommodationbe.service.calendar;
 
 import com.evoapartments.accommodationbe.domain.calendar.EventDTO;
-import com.evoapartments.accommodationbe.domain.calendar.FreeBusyDTO;
+import com.evoapartments.accommodationbe.domain.reservation.ReservedAccommodation;
 import com.evoapartments.accommodationbe.response.AccommodationResponse;
 import com.google.api.services.calendar.model.Event;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,17 +22,17 @@ public interface IGoogleCalendarService {
 
     Event createCalendarReservationEvent(EventDTO e);
 
-    List<Event> getCalendarEventsByPeriod(String startDate, String endDate, String calendarId1) throws IOException;
-
-    List<Event> getCalendarEvents(String calendarId) throws IOException;
-
     String authorize() throws Exception;
 
-    List<AccommodationResponse> getAvailableAccommodationsFromCalendarFreeBusy(FreeBusyDTO freeBusyDTO) throws IOException, SQLException;
+    List<AccommodationResponse> getAvailableAccommodationsFromCalendarFreeBusy(String timeMin, String timeMax) throws IOException, SQLException;
 
-    String scheduleReservationEventToGoogleCalendar(String calendarId, EventDTO e) throws IOException, GeneralSecurityException;
+    List<AccommodationResponse> getAvailableAccommodationsByTypeFromCalendarFreeBusy(String timeMin, String timeMax, Long typeId) throws IOException;
 
-    List<List<Event>> getAccommodationAllCalendarsEvents(String startDate, String endDate, String accommodationId) throws IOException;
+    String scheduleReservationEventToGoogleCalendar(Long accommodationId, String calendarId, ReservedAccommodation request) throws IOException, GeneralSecurityException;
 
-    Boolean getAccommodationAvailabilityFromCalendarsFreeBusy(FreeBusyDTO request, String accommodationId) throws IOException;
+    Boolean getAccommodationAvailabilityFromCalendarsFreeBusy(String timeMin, String timeMax, Long accommodationId) throws IOException;
+
+    Event updateGoogleCalendarReservationEvent (String calendarId, String eventId, EventDTO updatedEvent) throws IOException;
+
+    void deleteGoogleCalendarReservationEvent(String calendarId, String eventId) throws IOException;
 }

@@ -4,6 +4,7 @@ import com.evoapartments.accommodationbe.domain.accommodation.Accommodation;
 import com.evoapartments.accommodationbe.domain.calendar.CalendarSync;
 import com.evoapartments.accommodationbe.domain.calendar.EventDTO;
 import com.evoapartments.accommodationbe.domain.calendar.FreeBusyDTO;
+import com.evoapartments.accommodationbe.domain.reservation.ReservedAccommodation;
 import com.evoapartments.accommodationbe.response.AccommodationResponse;
 import com.evoapartments.accommodationbe.service.accommodation.IAccommodationService;
 import com.evoapartments.accommodationbe.service.calendar.ICalendarSyncService;
@@ -21,7 +22,6 @@ import com.google.api.client.json.gson.GsonFactory;
 import com.google.api.client.util.DateTime;
 import com.google.api.services.calendar.CalendarScopes;
 import com.google.api.services.calendar.model.*;
-import com.google.api.services.calendar.model.Calendar;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.logging.Log;
@@ -104,9 +104,12 @@ public class GoogleCalendarService implements IGoogleCalendarService {
     }
 
     @Override
-    public List<AccommodationResponse> getAvailableAccommodationsFromCalendarFreeBusy(FreeBusyDTO freeBusyDTO) throws IOException {
+    public List<AccommodationResponse> getAvailableAccommodationsFromCalendarFreeBusy(String timeMin, String timeMax) throws IOException {
         List<Accommodation> accommodations = accommodationService.getAllAccommodations();
         List<CalendarSync> syncCalendarsList = getAllSynchronizedAccommodationsCalendars(accommodations);
+        FreeBusyDTO freeBusyDTO = new FreeBusyDTO();
+        freeBusyDTO.setTimeMin(timeMin + "T00:00:00");
+        freeBusyDTO.setTimeMax(timeMax + "T00:00:00");
         FreeBusyResponse freeBusyResponse = getCalendarsFreeBusyResponse(syncCalendarsList, freeBusyDTO);
         List<Long> availableIds = getAvailableAccommodationIds(freeBusyResponse, syncCalendarsList);
         List<Accommodation> availableAccommodations = getAvailableAccommodationsFromAvailableIds(accommodations, availableIds);
@@ -114,12 +117,31 @@ public class GoogleCalendarService implements IGoogleCalendarService {
     }
 
     @Override
-    public Boolean getAccommodationAvailabilityFromCalendarsFreeBusy(FreeBusyDTO request, String accommodationId) throws IOException {
-        List<CalendarSync> calendarSyncList = getAccommodationSynchronizedCalendars(Long.valueOf(accommodationId));
-        FreeBusyResponse freeBusyResponse = getCalendarsFreeBusyResponse(calendarSyncList, request);
+    public List<AccommodationResponse> getAvailableAccommodationsByTypeFromCalendarFreeBusy(String timeMin, String timeMax, Long typeId) throws IOException {
+        List<AccommodationResponse> availableAccommodations = getAvailableAccommodationsFromCalendarFreeBusy(timeMin, timeMax);
+        List<Accommodation> accommodationsByType = accommodationService.getAccommodationsByTypeId(typeId);
+        List<AccommodationResponse> availableAccommodationsByType = new ArrayList<>();
+        for (AccommodationResponse accommodationResponse : availableAccommodations) {
+            for (Accommodation accommodation : accommodationsByType) {
+                if (Objects.equals(accommodationResponse.getId(), accommodation.getId())) {
+                    availableAccommodationsByType.add(accommodationResponse);
+                }
+            }
+        }
+        return availableAccommodationsByType;
+    }
+
+
+    @Override
+    public Boolean getAccommodationAvailabilityFromCalendarsFreeBusy(String timeMin, String timeMax, Long accommodationId) throws IOException {
+        List<CalendarSync> calendarSyncList = getAccommodationSynchronizedCalendars(accommodationId);
+        FreeBusyDTO freeBusyDTO = new FreeBusyDTO();
+        freeBusyDTO.setTimeMin(timeMin + "T00:00:00");
+        freeBusyDTO.setTimeMax(timeMax + "T00:00:00");
+        FreeBusyResponse freeBusyResponse = getCalendarsFreeBusyResponse(calendarSyncList, freeBusyDTO);
         List<Long> availableIds = getAvailableAccommodationIds(freeBusyResponse, calendarSyncList);
         if (!availableIds.isEmpty()) {
-            return Long.valueOf(accommodationId).equals(availableIds.get(0));
+            return accommodationId.equals(availableIds.get(0));
         }
         return false;
     }
@@ -157,31 +179,6 @@ public class GoogleCalendarService implements IGoogleCalendarService {
         event.setStart(startDate);
         event.setEnd(endDate);
         return event;
-    }
-
-    public List<Event> getCalendarEventsByPeriod(String startDate, String endDate, String calendarId1) throws IOException {
-        CalendarList calendarList = client.calendarList().list().execute();
-        List<CalendarListEntry> items = calendarList.getItems();
-        return client.events().list(calendarId1).setTimeMin(new DateTime(startDate)).setTimeMax(new DateTime(endDate)).execute().getItems();
-    }
-
-    public List<Event> getCalendarEvents(String calendarId1) throws IOException {
-        return client.events().list(calendarId1).execute().getItems();
-    }
-
-    @Override
-    public List<List<Event>> getAccommodationAllCalendarsEvents(String startDate, String endDate, String accommodationId) throws IOException {
-        List<CalendarSync> syncList = calendarSyncService.getAllSynchronizedCalendarsByAccommodationId(Long.valueOf(accommodationId));
-        List<List<Event>> allAccommodationCalendars = new ArrayList<>();
-        for (CalendarSync calendar : syncList) {
-            List<Event> events = client.events()
-                    .list(calendar.getGoogleCalendarId())
-                    .setTimeMin(DateTime.parseRfc3339(startDate))
-                    .setTimeMax(DateTime.parseRfc3339(endDate))
-                    .execute().getItems();
-            allAccommodationCalendars.add(events);
-        }
-        return allAccommodationCalendars;
     }
 
     public FreeBusyResponse getCalendarsFreeBusyResponse(List<CalendarSync> syncList, FreeBusyDTO freeBusyDTO) throws IOException {
@@ -232,18 +229,33 @@ public class GoogleCalendarService implements IGoogleCalendarService {
         return availableAccommodations;
     }
 
-    public boolean containsAccommodationId(final List<Accommodation> list, final Long accommodationId){
-        return list.stream().anyMatch(o -> o.getId().equals(accommodationId));
-    }
-
-    public String scheduleReservationEventToGoogleCalendar(String calendarId, EventDTO e) throws IOException, GeneralSecurityException {
+    public String scheduleReservationEventToGoogleCalendar(Long accommodationId, String calendarId, ReservedAccommodation request)
+            throws IOException, GeneralSecurityException {
         initializeClient();
-        if (isDateAvailable(calendarId, e.getStartDate(), e.getEndDate())) {
-            client.events().insert(calendarId, createCalendarReservationEvent(e)).execute();
-            return "The synchronized calendar New Reservation Event created successfully";}
+        String startDate = String.valueOf(request.getCheckInDate());
+        String endDate = String.valueOf(request.getCheckOutDate());
+        if (isDateAvailable(calendarId, startDate, endDate)) {
+            Accommodation accommodation = accommodationService.getAccommodationById(accommodationId).orElse(null);
+            EventDTO reservationEvent = getEventDTO(startDate, endDate, accommodation, request);
+            Event event = client.events().insert(calendarId, createCalendarReservationEvent(reservationEvent)).execute();
+            return event.getId();
+        }
         else {
             return "Dates are not available. Scheduling new reservation event was unsuccessful!";
         }
+    }
+
+    private static EventDTO getEventDTO(String startDate, String endDate, Accommodation accommodation, ReservedAccommodation request ) {
+        EventDTO reservationEvent = new EventDTO();
+        reservationEvent.setStartDate(startDate);
+        reservationEvent.setEndDate(endDate);
+        reservationEvent.setSummary("Reserved - " + (request.getGuestFullName()));
+        reservationEvent.setDescription("Reservation at " + accommodation + " from: " + startDate + " until: "
+                + endDate + "\n Adults: " + request.getNumberOfAdults() + ", Children: " + request.getTotalNumberOfGuests()
+                + ", total:" + request.getTotalNumberOfGuests());
+        reservationEvent.setLocation(accommodation.getAddress() + ", " + accommodation.getZipCode() + ", "
+                + accommodation.getCity() + ", " + accommodation.getCountry());
+        return reservationEvent;
     }
 
     private boolean isDateAvailable(String calendarId, String startDate, String endDate) throws IOException{
@@ -254,11 +266,9 @@ public class GoogleCalendarService implements IGoogleCalendarService {
         return events.isEmpty();
     }
 
-    public Event deleteGoogleCalendarReservationEvent(String calendarId, String eventId) throws IOException {
+    public void deleteGoogleCalendarReservationEvent(String calendarId, String eventId) throws IOException {
         try {
-            Event deletedEvent = client.events().get(calendarId, eventId).execute();
             client.events().delete(calendarId, eventId).execute();
-            return deletedEvent;
         } catch (IOException e) {
             throw new IOException("Failed to delete the Calendar Reservation Event: " + e.getMessage());
         }

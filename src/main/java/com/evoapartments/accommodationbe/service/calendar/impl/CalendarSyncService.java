@@ -29,6 +29,11 @@ public class CalendarSyncService implements ICalendarSyncService {
     }
 
     @Override
+    public String getGoogleCalendarIdExportByAccommodationId(Long accommodationId) {
+        return calendarSyncRepository.findGoogleCalendarIdExportByAccommodationId(accommodationId);
+    }
+
+    @Override
     public CalendarSync createCalendarSynchronization(Long accommodationId, CalendarSync calendarSync) {
         Accommodation accommodation = accommodationService.getAccommodationById(accommodationId).orElse(null);
         calendarSync.setAccommodation(accommodation);

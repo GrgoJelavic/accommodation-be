@@ -36,6 +36,9 @@ public class ReservedAccommodation {
     @Column(name = "confirmation_code")
     private String reservationConfirmationCode;
 
+    @Column(name = "event_id")
+    private String calendarEventId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "accommodation_id")
     private Accommodation accommodation;
@@ -56,5 +59,9 @@ public class ReservedAccommodation {
 
     public void setBookingConfirmationCode(String bookingConfirmationCode) {
         this.reservationConfirmationCode = bookingConfirmationCode;
+    }
+
+    public void setCalendarEventId(String googleCalendarEventId) {
+        this.calendarEventId = googleCalendarEventId;
     }
 }
