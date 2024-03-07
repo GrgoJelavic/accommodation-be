@@ -40,7 +40,7 @@ public class Accommodation {
         this.reservations = new ArrayList<>();
     }
 
-    public void addReservation(ReservedAccommodation reservation) {
+    public void addReservation(ReservedAccommodation reservation, String eventId) {
         if (reservations == null) {
             reservations = new ArrayList<>();
         }
@@ -49,5 +49,6 @@ public class Accommodation {
         isReserved = true;
         String bookingCode = RandomStringUtils.randomNumeric(12);
         reservation.setBookingConfirmationCode(bookingCode);
+        reservation.setCalendarEventId(eventId);
     }
 }

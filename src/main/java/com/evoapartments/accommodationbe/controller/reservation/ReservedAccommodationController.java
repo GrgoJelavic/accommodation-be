@@ -15,7 +15,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.net.URI;
+import java.security.GeneralSecurityException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,7 +52,7 @@ public class ReservedAccommodationController {
 
     @GetMapping("confirmation/{confirmationCode}")
     @PreAuthorize("hasRole('ROLE_ADMIN') or (hasRole('ROLE_USER') and #email == principal.username)")
-    public ResponseEntity<?> getReservationByConfirmationCode(@PathVariable String confirmationCode){
+    public ResponseEntity<?> getReservationByConfirmationCode(@PathVariable String confirmationCode) {
         try {
             ReservedAccommodation reservation = accommodationReservedService.findByReservationConfirmationCode(confirmationCode);
             ReservedAccommodationResponse reservationResponse = getReservationResponse(reservation);
@@ -90,7 +92,7 @@ public class ReservedAccommodationController {
 
     @PostMapping("/accommodation/{accommodationId}/reservation")
     public ResponseEntity<?> saveReservation(@PathVariable Long accommodationId,
-                                             @RequestBody ReservedAccommodation reservationRequest){
+                                             @RequestBody ReservedAccommodation reservationRequest) {
         try {
             String confirmationCode = accommodationReservedService.saveReservation(accommodationId, reservationRequest);
             ReservedAccommodationResponse response = getReservationResponse(reservationRequest);
@@ -102,19 +104,19 @@ public class ReservedAccommodationController {
                             .status(HttpStatus.OK)
                             .statusCode(HttpStatus.OK.value())
                             .build());
-        } catch (InvalidReservationRequestException ex){
+        } catch (InvalidReservationRequestException | GeneralSecurityException | IOException ex ) {
             return ResponseEntity.badRequest().body(ex.getMessage());
         }
     }
 
     @PreAuthorize("hasRole('ROLE_ADMIN') or (hasRole('ROLE_USER') and #email == principal.username)")
     @DeleteMapping("/reservation/{reservationId}/delete")
-    public ResponseEntity<HttpResponse> cancelReservation(@PathVariable("reservationId") Long reservationId){
+    public ResponseEntity<HttpResponse> cancelReservation(@PathVariable("reservationId") Long reservationId) throws IOException {
         accommodationReservedService.cancelReservation(reservationId);
         return ResponseEntity.created(URI.create("")).body(
                 HttpResponse.builder()
                         .timeStamp(LocalDateTime.now().toString())
-                        .message("Reservation " + reservationId + " canceled successfully.")
+                        .message("Reservation with ID no:" + reservationId + " is canceled successfully.")
                         .status(HttpStatus.OK)
                         .statusCode(HttpStatus.OK.value())
                         .build());

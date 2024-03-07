@@ -104,7 +104,7 @@ public class TypeController {
         return ResponseEntity.created(URI.create("")).body(
                 HttpResponse.builder()
                         .timeStamp(LocalDateTime.now().toString())
-                        .data(Map.of("newAccommodationType", typeResponse))
+                        .data(Map.of("updatedAccommodationType", typeResponse))
                         .message("New accommodation type updated successfully.")
                         .status(HttpStatus.OK)
                         .statusCode(HttpStatus.OK.value())

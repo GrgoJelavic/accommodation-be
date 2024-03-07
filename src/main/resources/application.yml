@@ -57,12 +57,36 @@ spring:
   thymeleaf:
     check-template-location: false
 
+  main:
+    allow-circular-references: true
+    allow-bean-definition-overriding: true
+
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+
+google:
+  client:
+    client-id: ######
+    client-secret:  ######
+    access-token-uri: https://www.googleapis.com/oauth2/v3/token
+    user-authorization-uri: https://accounts.google.com/o/oauth2/auth?access_type=offline&prompt=consent
+    client-authentication-scheme: query
+    scope:
+      - profile,
+      - email,
+      - https://www.googleapis.com/auth/calendar
+    redirectUri: http://localhost:9192/google/login
+  resource:
+    user-info-uri: https://www.googleapis.com/oauth2/v2/userinfo
+    prefer-token-info: true
+
 server:
   port: ${SERVER_PORT:8080}
 
 auth:
   token:
-    jwtSecret: PYciPtalcC6DBx0IpFgUn8Q3j5R9234HFspShl27dzU
+    jwtSecret: ######
     expirationMs: 3600000
 
 logging:

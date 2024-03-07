@@ -13,5 +13,5 @@ ACTIVE_PROFILE: dev
 EMAIL_HOST: smtp.gmail.com
 EMAIL_PORT: 587
 EMAIL_ID: ######
-EMAIL_PASSWORD: #######
+EMAIL_PASSWORD: ######
 VERIFY_EMAIL_HOST: http://localhost:${SERVER_PORT}

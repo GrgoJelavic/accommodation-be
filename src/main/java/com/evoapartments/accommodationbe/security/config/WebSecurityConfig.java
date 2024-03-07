@@ -56,6 +56,8 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests(authorization -> authorization
                         .requestMatchers("/auth/**",
                                 "/users/**",
+                                "/google/**",
+                                "/calendar-synchronization/**",
                                 "/accommodations/**",
                                 "/reservations/**",
                                 "/accommodation-types/**")

@@ -11,7 +11,6 @@ import com.evoapartments.accommodationbe.service.reservation.IReservedAccommodat
 import com.evoapartments.accommodationbe.service.accommodation.IAccommodationService;
 import lombok.RequiredArgsConstructor;
 import org.apache.tomcat.util.codec.binary.Base64;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -24,7 +23,6 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.sql.Blob;
 import java.sql.SQLException;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -88,25 +86,6 @@ public class AccommodationController {
                                 .status(HttpStatus.FOUND)
                                 .statusCode(HttpStatus.FOUND.value())
                                 .build());
-    }
-
-    @GetMapping("/available-accommodations")
-    public ResponseEntity<?> getAvailableAccommodations(
-            @RequestParam("checkInDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkIn,
-            @RequestParam("checkOutDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOut,
-            @RequestParam("accommodationType") Long typeId) throws SQLException {
-        List<Accommodation> availableAccommodations = accommodationService.getAvailableAccommodations(checkIn, checkOut, typeId);
-        List<AccommodationResponse> accommodationResponses = setPhotosIntoAccommodationResponses(availableAccommodations);
-        return accommodationResponses.isEmpty()
-                ? ResponseEntity.noContent().build()
-                : ResponseEntity.created(URI.create("")).body(
-                HttpResponse.builder()
-                        .timeStamp(LocalDateTime.now().toString())
-                        .data(Map.of("accommodations", accommodationResponses, "size", availableAccommodations.size()))
-                        .message("Available accommodations list fetched successfully.")
-                        .status(HttpStatus.FOUND)
-                        .statusCode(HttpStatus.FOUND.value())
-                        .build());
     }
 
     @PostMapping("/add/new-accommodation")

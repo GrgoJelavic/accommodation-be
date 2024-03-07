@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Blob;
 import java.sql.SQLException;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -87,11 +86,6 @@ public class AccommodationService implements IAccommodationService {
     @Override
     public Optional<Accommodation> getAccommodationById(Long accommodationId) {
         return accommodationRepository.findById(accommodationId);
-    }
-
-    @Override
-    public List<Accommodation> getAvailableAccommodations(LocalDate checkInDate, LocalDate checkOutDate, Long accommodationTypeId) {
-        return accommodationRepository.findAvailableAccommodationsByDatesAndType(checkInDate, checkOutDate, accommodationTypeId);
     }
 
     @Override
